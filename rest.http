@@ -1,0 +1,24 @@
+### create task with "monthToProcess" argument
+POST http://localhost:8080/task/create
+Content-Type: application/json
+
+{
+    "monthToProcess": 4
+}
+
+### create task without "monthToProcess" argument, using current month
+
+POST http://localhost:8080/task/create
+Content-Type: application/json
+
+{}
+
+### check task processing result
+
+GET http://localhost:8080/task/check?id=5001
+Content-Type: application/json
+
+### Get list of all preloaded persons
+
+GET http://localhost:8080/person
+Content-Type: application/json
