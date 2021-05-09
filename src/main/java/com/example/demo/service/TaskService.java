@@ -34,10 +34,8 @@ public class TaskService {
     public Long createTask(Integer monthToProcess) throws IllegalArgumentException {
         Task task = new Task();
         if (monthToProcess == null) {
-            SimpleDateFormat format = new SimpleDateFormat("M");
-            task.setMonthToProcess(
-                Integer.parseInt(format.format(new Date(Instant.now().toEpochMilli())))
-            );
+            LocalDate now = LocalDate.now();
+            task.setMonthToProcess(now.getMonthValue());
         } else if (1 < monthToProcess && 12 > monthToProcess){
             task.setMonthToProcess(monthToProcess);
         } else {
