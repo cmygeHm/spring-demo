@@ -6,14 +6,13 @@ import com.example.demo.repository.PersonRepository;
 import com.example.demo.repository.TaskRepository;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Component
+@Service
 public class PostConstructService {
 
     final private PersonRepository personRepository;

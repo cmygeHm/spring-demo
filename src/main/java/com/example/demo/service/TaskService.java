@@ -7,15 +7,13 @@ import com.example.demo.entity.Task;
 import com.example.demo.repository.PersonRepository;
 import com.example.demo.repository.ProcessedTaskRepository;
 import com.example.demo.repository.TaskRepository;
-import org.springframework.stereotype.Component;
-import java.sql.Date;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
+import org.springframework.stereotype.Service;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-@Component
+@Service
 public class TaskService {
     final private TaskRepository taskRepository;
     final private PersonRepository personRepository;
