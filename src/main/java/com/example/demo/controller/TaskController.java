@@ -57,19 +57,22 @@ public class TaskController {
         }
 
         if (!optionalTask.get().getProcessed()) {
-            return new ProcessingResult();
+            return new ProcessingResult(id);
         }
 
         ProcessedTaskId processedTaskId = new ProcessedTaskId();
         processedTaskId.setTask(optionalTask.get());
         List<ProcessedTask> processedTasks = processedTaskRepository.findAllByProcessedTaskId_Task(optionalTask.get());
         if (processedTasks.isEmpty()) {
-            ProcessingResult processingResult = new ProcessingResult();
+            ProcessingResult processingResult = new ProcessingResult(id);
             processingResult.setProcessed(true);
             return processingResult;
         }
 
-        ProcessingResult result = new ProcessingResult(processedTasks.size());
+        ProcessingResult result = new ProcessingResult(
+            id,
+            processedTasks.size()
+        );
         result.setProcessed(optionalTask.get().getProcessed());
         for(ProcessedTask processedTask: processedTasks) {
             ProcessingPersonResult personResult = new ProcessingPersonResult();

@@ -4,16 +4,29 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ProcessingResult {
+    private Long taskId;
+
     private Boolean processed = false;
 
     private List<ProcessingPersonResult> persons;
 
-    public ProcessingResult() {
-         persons = new ArrayList<ProcessingPersonResult>();
+    public ProcessingResult(Long taskId) {
+        this.taskId = taskId;
+        persons = new ArrayList<ProcessingPersonResult>();
     }
 
-    public ProcessingResult(Integer capacity) {
-         persons = new ArrayList<ProcessingPersonResult>(capacity);
+    public ProcessingResult(Long taskId, Integer capacity) {
+        this.taskId = taskId;
+        persons = new ArrayList<ProcessingPersonResult>(capacity);
+    }
+
+    public Long getTaskId() {
+        return taskId;
+    }
+
+    public ProcessingResult setTaskId(Long taskId) {
+        this.taskId = taskId;
+        return this;
     }
 
     public Boolean getProcessed() {
