@@ -24,7 +24,7 @@ public class TasksProcessor implements Runnable {
         System.out.printf("%s started... \n", Thread.currentThread().getName());
         try{
             while (true) {
-                Optional<Task> optionalTask = taskRepository.findOneByProcessedFalse();
+                Optional<Task> optionalTask = taskRepository.findTopByProcessedFalse();
                 if (optionalTask.isPresent()) {
                     taskService.processTask(optionalTask.get());
                     System.out.printf("Task %d was processed... \n", optionalTask.get().getId());
