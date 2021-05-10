@@ -18,16 +18,13 @@ public class TaskService {
     private class Task implements Runnable {
         final private UUID uuid;
         final private Integer month;
-        private Map<UUID, CalculationResult> calculationResultMap;
 
         public Task(
-                UUID uuid,
-                Integer month,
-                Map<UUID, CalculationResult> calculationResultMap
+            UUID uuid,
+            Integer month
         ) {
             this.uuid = uuid;
             this.month = month;
-            this.calculationResultMap = calculationResultMap;
         }
 
         public void run() {
@@ -53,7 +50,7 @@ public class TaskService {
                 );
             }
             CalculationResult result = new CalculationResult(persons);
-            calculationResultMap.put(uuid, result);
+            calculatedTasks.put(uuid, result);
             logger.info(String.format("Task %s was processed", uuid));
         }
     }
@@ -83,8 +80,7 @@ public class TaskService {
         UUID uuid = UUID.randomUUID();
         Task runnable = new Task(
             uuid,
-            monthToProcess,
-            calculatedTasks
+            monthToProcess
         );
         taskExecutor.execute(runnable);
         logger.info(String.format("Task %s was created", uuid));
