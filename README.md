@@ -8,6 +8,8 @@ Client will take `taskId` after request. After that, client can check this `task
 
 
 ### How to use it
+
+First, you need install mvn. Sorry for none dockerized project.
 Start project via ./start.sh in the root of project.
 After that, you can try http-requests written in ./rest.http file. File written in IntelliJIDEA format.
 
