@@ -3,6 +3,8 @@ package com.example.demo.service;
 import com.example.demo.dto.response.CalculationResult;
 import com.example.demo.entity.Person;
 import com.example.demo.repository.PersonRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
@@ -29,9 +31,11 @@ public class TaskService {
 
         public void run() {
             try {
-                Thread.sleep((int) (Math.random() * (30000)) + 5000);
+                double sleepForDemo = (Math.random() * (30000)) + 5000;
+                logger.info(String.format("Sleep %d seconds for demo", Math.round(sleepForDemo/1000)));
+                Thread.sleep((long)sleepForDemo);
             } catch (InterruptedException e){
-                System.out.println("Thread was Interrupted");
+                logger.info("Thread was interrupted");
             }
             List<com.example.demo.entity.Person> persons = personRepository.findAllByBirthdayMonth(month);
             for(Person person: persons) {
@@ -49,16 +53,18 @@ public class TaskService {
             }
             CalculationResult result = new CalculationResult(persons);
             calculationResultMap.put(uuid, result);
+            logger.info(String.format("Task %s was processed", uuid));
         }
     }
 
     final private PersonRepository personRepository;
     final private TaskExecutor taskExecutor;
     final private Map<UUID, CalculationResult> calculatedTasks = new HashMap<>();
+    final private static Logger logger = LoggerFactory.getLogger(TaskService.class);
 
     public TaskService(
-            PersonRepository personRepository,
-            TaskExecutor taskExecutor
+        PersonRepository personRepository,
+        TaskExecutor taskExecutor
     ) {
         this.personRepository = personRepository;
         this.taskExecutor = taskExecutor;
@@ -80,11 +86,16 @@ public class TaskService {
             calculatedTasks
         );
         taskExecutor.execute(runnable);
+        logger.info(String.format("Task %s was created", uuid));
 
         return uuid;
     }
 
     public Optional<CalculationResult> findTask(UUID uuid) {
-        return Optional.of(calculatedTasks.get(uuid));
+        try {
+            return Optional.of(calculatedTasks.get(uuid));
+        } catch (NullPointerException e) {
+            return Optional.empty();
+        }
     }
 }

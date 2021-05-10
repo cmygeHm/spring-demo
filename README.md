@@ -8,6 +8,5 @@ Client will take `taskId` after request. After that, client can check this `task
 Example requests in rest.http file.
 
 ### Todo
-* logging
 * startup script
 * tests
