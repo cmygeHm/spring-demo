@@ -1,13 +1,15 @@
 package com.example.demo.dto.response;
 
-public class CreatingResult {
-    private Long taskId;
+import java.util.UUID;
 
-    public CreatingResult(Long taskId) {
+public class CreatingResult {
+    private UUID taskId;
+
+    public CreatingResult(UUID taskId) {
         this.taskId = taskId;
     }
 
-    public Long getTaskId() {
+    public UUID getTaskId() {
         return taskId;
     }
 }

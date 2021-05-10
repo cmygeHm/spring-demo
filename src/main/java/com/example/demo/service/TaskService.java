@@ -1,72 +1,115 @@
 package com.example.demo.service;
 
+import com.example.demo.dto.response.CalculationResult;
 import com.example.demo.entity.Person;
-import com.example.demo.entity.ProcessedTask;
-import com.example.demo.entity.ProcessedTaskId;
-import com.example.demo.entity.Task;
 import com.example.demo.repository.PersonRepository;
-import com.example.demo.repository.ProcessedTaskRepository;
-import com.example.demo.repository.TaskRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 
 @Service
 public class TaskService {
-    final private TaskRepository taskRepository;
+
+    private class Task implements Runnable {
+        final private UUID uuid;
+        final private Integer month;
+
+        public Task(
+            UUID uuid,
+            Integer month
+        ) {
+            this.uuid = uuid;
+            this.month = month;
+        }
+
+        public void run() {
+            calculatedTasks.put(uuid, new CalculationResult());
+            try {
+                double sleepForDemo = (Math.random() * (30000)) + 5000;
+                logger.info(String.format("Sleep %d seconds for demo", Math.round(sleepForDemo/1000)));
+                Thread.sleep((long)sleepForDemo);
+            } catch (InterruptedException e){
+                logger.info("Thread was interrupted");
+            }
+            List<com.example.demo.entity.Person> persons = personRepository.findAllByBirthdayMonth(month);
+            for(Person person: persons) {
+                LocalDate birthday = person.getBirthDay();
+                LocalDate birthdayInCurrentYear = birthday.withYear(LocalDate.now().getYear());
+                LocalDate nextBirthday;
+                if (birthdayInCurrentYear.isBefore(LocalDate.now())) {
+                    nextBirthday = birthdayInCurrentYear.plusYears(1L);
+                } else {
+                    nextBirthday = birthdayInCurrentYear;
+                }
+                person.setDaysBeforeBirthday(
+                    ChronoUnit.DAYS.between(LocalDate.now(), nextBirthday)
+                );
+            }
+            calculatedTasks.get(uuid)
+                    .setCalculatedAt(LocalDateTime.now())
+                    .markAsProcessed()
+                    .setPersons(persons);
+
+            logger.info(String.format("Task %s was processed", uuid));
+        }
+    }
+
     final private PersonRepository personRepository;
-    final private ProcessedTaskRepository processedTaskRepository;
+    final private TaskExecutor taskExecutor;
+    final private Map<UUID, CalculationResult> calculatedTasks = new HashMap<>();
+    final private static Logger logger = LoggerFactory.getLogger(TaskService.class);
 
     public TaskService(
-            TaskRepository taskRepository,
-            PersonRepository personRepository,
-            ProcessedTaskRepository processedTaskRepository
+        PersonRepository personRepository,
+        TaskExecutor taskExecutor
     ) {
-        this.taskRepository = taskRepository;
         this.personRepository = personRepository;
-        this.processedTaskRepository = processedTaskRepository;
+        this.taskExecutor = taskExecutor;
     }
 
-    public Long createTask(Integer monthToProcess) throws IllegalArgumentException {
-        Task task = new Task();
+    public UUID createTask(Integer monthToProcess) throws IllegalArgumentException {
+
         if (monthToProcess == null) {
             LocalDate now = LocalDate.now();
-            task.setMonthToProcess(now.getMonthValue());
-        } else if (1 < monthToProcess && 12 > monthToProcess){
-            task.setMonthToProcess(monthToProcess);
-        } else {
+            monthToProcess = now.getMonthValue();
+        } else if (monthToProcess < 1 || monthToProcess > 12) {
             throw new IllegalArgumentException("Invalid month: month value can be between 1 and 12");
         }
-        taskRepository.save(task);
 
-        return task.getId();
+        UUID uuid = UUID.randomUUID();
+        Task runnable = new Task(
+            uuid,
+            monthToProcess
+        );
+        taskExecutor.execute(runnable);
+        logger.info(String.format("Task %s was created", uuid));
+
+        return uuid;
     }
 
-    public void processTask(Task task) {
-        List<Person> persons = personRepository.findAllByBirthdayMonth(task.getMonthToProcess());
-        List<ProcessedTask> processedTasks = new ArrayList<>(persons.size());
-        for(Person person: persons) {
-            LocalDate birthday = person.getBirthDay();
-            LocalDate birthdayInCurrentYear = birthday.withYear(LocalDate.now().getYear());
-            LocalDate nextBirthday;
-            if (birthdayInCurrentYear.isBefore(LocalDate.now())) {
-                nextBirthday = birthdayInCurrentYear.plusYears(1L);
-            } else {
-                nextBirthday = birthdayInCurrentYear;
-            }
-            ProcessedTask processedTask = new ProcessedTask();
-            ProcessedTaskId processedTaskId = new ProcessedTaskId();
-            processedTaskId.setTask(task);
-            processedTaskId.setPerson(person);
-            processedTask.setProcessedTaskId(processedTaskId);
-            processedTask.setNextBirthDay(nextBirthday);
-            processedTasks.add(processedTask);
-        }
-        task.setProcessed(true);
+    public CalculationResult findTask(UUID uuid) {
+        return calculatedTasks.get(uuid);
+    }
 
-        taskRepository.save(task);
-        processedTaskRepository.saveAll(processedTasks);
+    @Scheduled(cron="0 0 * * * ?")
+    public void cleanOutdatedTasks()
+    {
+        logger.info("Start cleaning outdated calculations. Current HashMap size: " + calculatedTasks.size());
+        Iterator<Map.Entry<UUID, CalculationResult>> iterator = calculatedTasks.entrySet().iterator();
+        while (iterator.hasNext()){
+            Map.Entry<UUID, CalculationResult> me = iterator.next();
+            CalculationResult value = me.getValue();
+            if (LocalDate.now().isAfter(value.getCreatedAt().toLocalDate())) {
+                logger.info("Remove outdated task: " + me.getKey());
+                iterator.remove();
+            }
+        }
+        logger.info("Finish cleaning outdated calculations. Current HashMap size: " + calculatedTasks.size());
     }
 }
