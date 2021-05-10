@@ -9,6 +9,7 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
@@ -28,6 +29,7 @@ public class TaskService {
         }
 
         public void run() {
+            calculatedTasks.put(uuid, new CalculationResult());
             try {
                 double sleepForDemo = (Math.random() * (30000)) + 5000;
                 logger.info(String.format("Sleep %d seconds for demo", Math.round(sleepForDemo/1000)));
@@ -49,8 +51,11 @@ public class TaskService {
                     ChronoUnit.DAYS.between(LocalDate.now(), nextBirthday)
                 );
             }
-            CalculationResult result = new CalculationResult(persons);
-            calculatedTasks.put(uuid, result);
+            calculatedTasks.get(uuid)
+                    .setCalculatedAt(LocalDateTime.now())
+                    .markAsProcessed()
+                    .setPersons(persons);
+
             logger.info(String.format("Task %s was processed", uuid));
         }
     }
@@ -100,7 +105,7 @@ public class TaskService {
         while (iterator.hasNext()){
             Map.Entry<UUID, CalculationResult> me = (Map.Entry)iterator.next();
             CalculationResult value = me.getValue();
-            if (LocalDate.now().isAfter(value.getCreatedAt())) {
+            if (LocalDate.now().isAfter(value.getCreatedAt().toLocalDate())) {
                 logger.info("Remove outdated task: " + me.getKey());
                 iterator.remove();
             }
