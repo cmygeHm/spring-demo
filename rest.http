@@ -21,6 +21,10 @@ Content-Type: application/json
 GET http://localhost:8080/task/check?uuid=
 Content-Type: application/json
 
+### force clean outdated data
+GET http://localhost:8080/task/clean
+Content-Type: application/json
+
 ### Get list of all preloaded persons
 
 GET http://localhost:8080/person

@@ -6,6 +6,7 @@ import com.example.demo.repository.PersonRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.task.TaskExecutor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -97,5 +98,21 @@ public class TaskService {
         } catch (NullPointerException e) {
             return Optional.empty();
         }
+    }
+
+    @Scheduled(cron="0 0 * * * ?")
+    public void cleanOutdatedTasks()
+    {
+        logger.info("Start cleaning outdated calculations. Current HashMap size: " + calculatedTasks.size());
+        Iterator iterator = calculatedTasks.entrySet().iterator();
+        while (iterator.hasNext()){
+            Map.Entry<UUID, CalculationResult> me = (Map.Entry)iterator.next();
+            CalculationResult value = me.getValue();
+            if (LocalDate.now().isAfter(value.getCreatedAt())) {
+                logger.info("Remove outdated task: " + me.getKey());
+                iterator.remove();
+            }
+        }
+        logger.info("Finish cleaning outdated calculations. Current HashMap size: " + calculatedTasks.size());
     }
 }

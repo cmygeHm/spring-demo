@@ -49,4 +49,9 @@ public class TaskController {
 
         return optionalTask.get();
     }
+
+    @GetMapping("/clean")
+    public void cleanOutdatedCalculations() {
+        taskService.cleanOutdatedTasks();
+    }
 }
