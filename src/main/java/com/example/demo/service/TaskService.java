@@ -92,12 +92,8 @@ public class TaskService {
         return uuid;
     }
 
-    public Optional<CalculationResult> findTask(UUID uuid) {
-        try {
-            return Optional.of(calculatedTasks.get(uuid));
-        } catch (NullPointerException e) {
-            return Optional.empty();
-        }
+    public CalculationResult findTask(UUID uuid) {
+        return calculatedTasks.get(uuid);
     }
 
     @Scheduled(cron="0 0 * * * ?")

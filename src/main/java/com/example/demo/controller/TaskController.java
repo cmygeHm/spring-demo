@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import java.util.Optional;
 import java.util.UUID;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -40,14 +39,13 @@ public class TaskController {
 
     @GetMapping("/check")
     public CalculationResult checkTask(@RequestParam UUID uuid) {
-        Optional<CalculationResult> optionalTask = taskService.findTask(uuid);
-
-        if (optionalTask.isEmpty()) {
+        CalculationResult task = taskService.findTask(uuid);
+        if (task == null) {
             logger.info("Task not found: " + uuid);
             throw new ResponseStatusException(NOT_FOUND, "Task not found");
         }
 
-        return optionalTask.get();
+        return task;
     }
 
     @GetMapping("/clean")
