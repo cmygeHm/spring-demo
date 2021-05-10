@@ -101,9 +101,9 @@ public class TaskService {
     public void cleanOutdatedTasks()
     {
         logger.info("Start cleaning outdated calculations. Current HashMap size: " + calculatedTasks.size());
-        Iterator iterator = calculatedTasks.entrySet().iterator();
+        Iterator<Map.Entry<UUID, CalculationResult>> iterator = calculatedTasks.entrySet().iterator();
         while (iterator.hasNext()){
-            Map.Entry<UUID, CalculationResult> me = (Map.Entry)iterator.next();
+            Map.Entry<UUID, CalculationResult> me = iterator.next();
             CalculationResult value = me.getValue();
             if (LocalDate.now().isAfter(value.getCreatedAt().toLocalDate())) {
                 logger.info("Remove outdated task: " + me.getKey());
