@@ -1,19 +1,13 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.request.ProcessingRequest;
+import com.example.demo.dto.response.CalculationResult;
 import com.example.demo.dto.response.CreatingResult;
-import com.example.demo.dto.response.ProcessingPersonResult;
-import com.example.demo.dto.response.ProcessingResult;
-import com.example.demo.entity.ProcessedTask;
-import com.example.demo.entity.ProcessedTaskId;
-import com.example.demo.entity.Task;
-import com.example.demo.repository.ProcessedTaskRepository;
-import com.example.demo.repository.TaskRepository;
 import com.example.demo.service.TaskService;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -23,17 +17,10 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public class TaskController {
 
     final private TaskService taskService;
-    final private TaskRepository taskRepository;
-    final private ProcessedTaskRepository processedTaskRepository;
-
     public TaskController(
-        TaskService taskService,
-        TaskRepository taskRepository,
-        ProcessedTaskRepository processedTaskRepository
+        TaskService taskService
     ) {
         this.taskService = taskService;
-        this.taskRepository = taskRepository;
-        this.processedTaskRepository = processedTaskRepository;
     }
 
     @PostMapping("/create")
@@ -45,42 +32,16 @@ public class TaskController {
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(BAD_REQUEST, ex.getMessage());
         }
-
     }
 
     @GetMapping("/check")
-    public ProcessingResult checkTask(@RequestParam Long id) {
-        Optional<Task> optionalTask = taskRepository.findById(id);
+    public CalculationResult checkTask(@RequestParam UUID uuid) {
+        Optional<CalculationResult> optionalTask = taskService.findTask(uuid);
 
         if (optionalTask.isEmpty()) {
             throw new ResponseStatusException(NOT_FOUND, "Task not found");
         }
 
-        if (!optionalTask.get().getProcessed()) {
-            return new ProcessingResult(id);
-        }
-
-        ProcessedTaskId processedTaskId = new ProcessedTaskId();
-        processedTaskId.setTask(optionalTask.get());
-        List<ProcessedTask> processedTasks = processedTaskRepository.findAllByProcessedTaskId_Task(optionalTask.get());
-        if (processedTasks.isEmpty()) {
-            ProcessingResult processingResult = new ProcessingResult(id);
-            processingResult.setProcessed(true);
-            return processingResult;
-        }
-
-        ProcessingResult result = new ProcessingResult(
-            id,
-            processedTasks.size()
-        );
-        result.setProcessed(optionalTask.get().getProcessed());
-        for(ProcessedTask processedTask: processedTasks) {
-            ProcessingPersonResult personResult = new ProcessingPersonResult();
-            personResult.setName(processedTask.getProcessedTaskId().getPerson().getName());
-            personResult.setDaysBeforeBirthday(processedTask.getDaysBeforeBirthday());
-            result.addPerson(personResult);
-        }
-
-        return result;
+        return optionalTask.get();
     }
 }

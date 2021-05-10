@@ -3,6 +3,7 @@ package com.example.demo.entity;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.Transient;
 import java.time.LocalDate;
 
 @Entity
@@ -12,6 +13,8 @@ public class Person {
     private Long id;
     private String name;
     private LocalDate birthDay;
+    @Transient
+    private long daysBeforeBirthday;
 
     public Long getId() {
         return id;
@@ -37,6 +40,15 @@ public class Person {
 
     public Person setBirthDay(LocalDate birthDay) {
         this.birthDay = birthDay;
+        return this;
+    }
+
+    public long getDaysBeforeBirthday() {
+        return daysBeforeBirthday;
+    }
+
+    public Person setDaysBeforeBirthday(long daysBeforeBirthday) {
+        this.daysBeforeBirthday = daysBeforeBirthday;
         return this;
     }
 }

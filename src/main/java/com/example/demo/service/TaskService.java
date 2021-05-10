@@ -1,72 +1,90 @@
 package com.example.demo.service;
 
+import com.example.demo.dto.response.CalculationResult;
 import com.example.demo.entity.Person;
-import com.example.demo.entity.ProcessedTask;
-import com.example.demo.entity.ProcessedTaskId;
-import com.example.demo.entity.Task;
 import com.example.demo.repository.PersonRepository;
-import com.example.demo.repository.ProcessedTaskRepository;
-import com.example.demo.repository.TaskRepository;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 
 @Service
 public class TaskService {
-    final private TaskRepository taskRepository;
+
+    private class Task implements Runnable {
+        final private UUID uuid;
+        final private Integer month;
+        private Map<UUID, CalculationResult> calculationResultMap;
+
+        public Task(
+                UUID uuid,
+                Integer month,
+                Map<UUID, CalculationResult> calculationResultMap
+        ) {
+            this.uuid = uuid;
+            this.month = month;
+            this.calculationResultMap = calculationResultMap;
+        }
+
+        public void run() {
+            try {
+                Thread.sleep((int) (Math.random() * (30000)) + 5000);
+            } catch (InterruptedException e){
+                System.out.println("Thread was Interrupted");
+            }
+            List<com.example.demo.entity.Person> persons = personRepository.findAllByBirthdayMonth(month);
+            for(Person person: persons) {
+                LocalDate birthday = person.getBirthDay();
+                LocalDate birthdayInCurrentYear = birthday.withYear(LocalDate.now().getYear());
+                LocalDate nextBirthday;
+                if (birthdayInCurrentYear.isBefore(LocalDate.now())) {
+                    nextBirthday = birthdayInCurrentYear.plusYears(1L);
+                } else {
+                    nextBirthday = birthdayInCurrentYear;
+                }
+                person.setDaysBeforeBirthday(
+                    ChronoUnit.DAYS.between(LocalDate.now(), nextBirthday)
+                );
+            }
+            CalculationResult result = new CalculationResult(persons);
+            calculationResultMap.put(uuid, result);
+        }
+    }
+
     final private PersonRepository personRepository;
-    final private ProcessedTaskRepository processedTaskRepository;
+    final private TaskExecutor taskExecutor;
+    final private Map<UUID, CalculationResult> calculatedTasks = new HashMap<>();
 
     public TaskService(
-            TaskRepository taskRepository,
             PersonRepository personRepository,
-            ProcessedTaskRepository processedTaskRepository
+            TaskExecutor taskExecutor
     ) {
-        this.taskRepository = taskRepository;
         this.personRepository = personRepository;
-        this.processedTaskRepository = processedTaskRepository;
+        this.taskExecutor = taskExecutor;
     }
 
-    public Long createTask(Integer monthToProcess) throws IllegalArgumentException {
-        Task task = new Task();
+    public UUID createTask(Integer monthToProcess) throws IllegalArgumentException {
+
         if (monthToProcess == null) {
             LocalDate now = LocalDate.now();
-            task.setMonthToProcess(now.getMonthValue());
-        } else if (1 < monthToProcess && 12 > monthToProcess){
-            task.setMonthToProcess(monthToProcess);
-        } else {
+            monthToProcess = now.getMonthValue();
+        } else if (monthToProcess < 1 || monthToProcess > 12) {
             throw new IllegalArgumentException("Invalid month: month value can be between 1 and 12");
         }
-        taskRepository.save(task);
 
-        return task.getId();
+        UUID uuid = UUID.randomUUID();
+        Task runnable = new Task(
+            uuid,
+            monthToProcess,
+            calculatedTasks
+        );
+        taskExecutor.execute(runnable);
+
+        return uuid;
     }
 
-    public void processTask(Task task) {
-        List<Person> persons = personRepository.findAllByBirthdayMonth(task.getMonthToProcess());
-        List<ProcessedTask> processedTasks = new ArrayList<>(persons.size());
-        for(Person person: persons) {
-            LocalDate birthday = person.getBirthDay();
-            LocalDate birthdayInCurrentYear = birthday.withYear(LocalDate.now().getYear());
-            LocalDate nextBirthday;
-            if (birthdayInCurrentYear.isBefore(LocalDate.now())) {
-                nextBirthday = birthdayInCurrentYear.plusYears(1L);
-            } else {
-                nextBirthday = birthdayInCurrentYear;
-            }
-            ProcessedTask processedTask = new ProcessedTask();
-            ProcessedTaskId processedTaskId = new ProcessedTaskId();
-            processedTaskId.setTask(task);
-            processedTaskId.setPerson(person);
-            processedTask.setProcessedTaskId(processedTaskId);
-            processedTask.setNextBirthDay(nextBirthday);
-            processedTasks.add(processedTask);
-        }
-        task.setProcessed(true);
-
-        taskRepository.save(task);
-        processedTaskRepository.saveAll(processedTasks);
+    public Optional<CalculationResult> findTask(UUID uuid) {
+        return Optional.of(calculatedTasks.get(uuid));
     }
 }
