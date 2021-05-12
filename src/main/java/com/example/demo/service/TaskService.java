@@ -12,6 +12,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class TaskService {
@@ -62,7 +63,7 @@ public class TaskService {
 
     final private PersonRepository personRepository;
     final private TaskExecutor taskExecutor;
-    final private Map<UUID, CalculationResult> calculatedTasks = new HashMap<>();
+    final private Map<UUID, CalculationResult> calculatedTasks = new ConcurrentHashMap<>();
     final private static Logger logger = LoggerFactory.getLogger(TaskService.class);
 
     public TaskService(
